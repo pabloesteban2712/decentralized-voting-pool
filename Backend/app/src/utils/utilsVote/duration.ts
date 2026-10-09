@@ -1,7 +1,7 @@
 export async function checkDuration(duration:number) {
     
     const MIN_DURATION = 3600        // 1 hour
-    const MAX_DURATION = 2592000    // 30 days
+    const MAX_DURATION = 2592000    // 30 days; must match VotingPool.sol
 
     if (!Number.isInteger(duration)) {
         throw new Error("Duration must be a integer.") 

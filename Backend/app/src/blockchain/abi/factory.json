@@ -1,0 +1,4 @@
+[
+  "function createVotingPool(uint256 duration)",
+  "event VotingPoolCreated(address indexed poolAddress)"
+]

@@ -1,111 +1,89 @@
-# Decentralized Voting Pool
+# Voting Pool
 
-Backend application for creating and managing voting pools using **TypeScript, MySQL and Blockchain**.
+Aplicación sencilla para crear votaciones de dos opciones. Guarda los datos de cada pool en PostgreSQL y registra los votos en un contrato Solidity.
 
-## 🏗️ Architecture
+## Estructura
 
-The project uses a hybrid architecture:
+- `Frontend/`: interfaz React con Vite. Permite crear pools, consultar resultados y votar con MetaMask.
+- `Backend/app/`: API REST con Express, TypeScript y PostgreSQL. Crea pools y prepara transacciones de voto.
+- `Smart Contract/`: contratos y scripts de despliegue con Foundry.
 
-```text
-Client
-  ↓
-Controller
-  ↓
-Service
-  ├── Database
-  └── Blockchain
-        ↓
-   Smart Contract
+## Requisitos
+
+- Node.js y npm
+- PostgreSQL
+- Foundry (`forge` y `anvil`)
+- MetaMask para votar desde la interfaz
+
+## Configuración local
+
+### 1. Base de datos
+
+Crea una base de datos llamada `votePool` y carga el esquema desde la raíz del proyecto:
+
+```sh
+psql -d votePool -f Backend/app/src/database/schema.sql
 ```
 
-- **Database:** stores application data such as `title` and `description`.
-- **Blockchain:** stores voting rules and state such as `poolId`, `duration`, `vote` and `restrictionVote`.
-- **Smart Contract:** enforces the rules of the voting system.
+### 2. Blockchain local
 
-## 📁 Structure
+Inicia Anvil en una terminal:
 
-```text
-src/
-├── controllers/
-├── database/
-├── entities/
-├── services/
-├── utils/
-└── blockchain/
-    ├── connection.ts
-    ├── poolContract.ts
-    └── abi/
+```sh
+anvil
 ```
 
-## ⛓️ Blockchain
+En otra terminal, crea `Smart Contract/.env` a partir de `Smart Contract/.env.example`. Pon en `PRIVATE_KEY` una clave de desarrollo de Anvil. Despliega la fábrica:
 
-The backend communicates with the smart contract using **ethers.js**.
-
-The contract ABI defines the functions and events that the backend can interact with.
-
-Pool creation:
-
-```text
-createPool()
-    ↓
-Validate data
-    ↓
-Smart Contract
-    ↓
-PoolCreated event
-    ↓
-poolId
-    ↓
-Save data in database
+```sh
+cd "Smart Contract"
+forge script script/DeployVotingPoolFactory.s.sol:DeployVotingPoolFactory --rpc-url http://127.0.0.1:8545 --broadcast
 ```
 
-## ✅ Validation
+Guarda la dirección de `VotingPoolFactory` que imprime Foundry; la necesitarás en la configuración del backend.
 
-The backend validates:
+### 3. Backend
 
-- Title: 5–100 characters
-- Description: 20–500 characters
-- Duration: 1 hour–30 days
-- Vote configuration
-- Vote restrictions
+Crea `Backend/app/.env` a partir de `Backend/app/.env.example` y configura:
 
-Critical rules are also validated by the smart contract.
+- `DATABASE_URL`: conexión a PostgreSQL y base `votePool`.
+- `RPC_URL`: `http://127.0.0.1:8545` para Anvil.
+- `PRIVATE_KEY`: clave local de Anvil que usará el backend para crear pools.
+- `CONTRACT_ADDRESS`: dirección de la fábrica desplegada.
+- `TOKEN_SECRET` y `REFRESH_SECRET`: valores aleatorios para los tokens.
 
-## 🛠️ Technologies
+Instala dependencias y arranca la API:
 
-- TypeScript
-- Node.js
-- Express
-- MySQL
-- Solidity
-- Ethereum
-- ethers.js
-
-## ⚙️ Setup
-
-```bash
+```sh
+cd Backend/app
 npm install
 npm run dev
 ```
 
-Required environment variables:
+La API queda en `http://localhost:3000/app`.
 
-```env
-DATABASE_URL=
-RPC_URL=
-PRIVATE_KEY=
-CONTRACT_ADDRESS=
+### 4. Frontend
+
+Con la API activa, abre otra terminal en `Frontend`:
+
+```sh
+cd Frontend
+npm install
+npm run dev
 ```
 
-> Never commit private keys or `.env` files.
+Abre la URL que muestra Vite. Para votar, conecta MetaMask a Anvil (`http://127.0.0.1:8545`) y usa una cuenta de desarrollo con fondos locales.
 
-## 🚧 Status
+## API de votaciones
 
-Work in progress.
+| Método | Ruta | Descripción |
+| --- | --- | --- |
+| `POST` | `/app/votes/create` | Crea un pool. Recibe `title`, `description` y `duration` en segundos. |
+| `POST` | `/app/votes/vote` | Prepara el voto. Recibe `poolId` y `option` (`0` o `1`). |
+| `GET` | `/app/votes/results/:id` | Devuelve los datos y resultados de un pool. |
 
-- [x] Backend architecture
-- [x] Database
-- [x] Input validation
-- [ ] Blockchain integration
-- [ ] Voting system
-- [ ] Frontend
+El backend devuelve los datos de transacción del voto; MetaMask los firma y envía desde la cuenta del votante.
+
+## Seguridad
+
+Los archivos `.env` y las claves privadas se mantienen fuera de Git. Usa únicamente claves y fondos de desarrollo al trabajar con Anvil; no publiques secretos ni los añadas a los ejemplos de configuración.

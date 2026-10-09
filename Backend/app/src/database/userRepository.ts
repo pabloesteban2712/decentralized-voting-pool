@@ -1,11 +1,13 @@
 import { pool } from '../database/connection';
 import { usernameRow, mailRow } from '../entities/types';
 
-export const createUserDB = async (name: string, username: string, mail: string, passwordHash: string, role: number): Promise<void> => {
-    await pool.query(
-        `Insert into users (name, username, mail, password, role_id) values ($1, $2, $3, $4, $5)`,
+export const createUserDB = async (name: string, username: string, mail: string, passwordHash: string, role: number) => {
+    const result = await pool.query(
+        `INSERT INTO users (name, username, mail, password_hash, role_id) VALUES ($1, $2, $3, $4, $5) RETURNING id, name, username, mail`,
         [name, username, mail, passwordHash, role]   
     );
+
+    return result.rows[0];
 };
 
 export const findUsernameDB = async (username: string): Promise<usernameRow | null> => {

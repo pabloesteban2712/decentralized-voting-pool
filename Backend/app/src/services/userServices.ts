@@ -12,17 +12,17 @@ export const createUser = async  (name: string, username: string, mail: string, 
     const cleanUsername = await checkUsername(username)
     const cleanMail = await checkMail(mail)
     const cleanPassword = await checkPassword(password)
-    const role = await checkRole(mail)
+    const role = await checkRole(cleanMail)
 
     // If checkPassword is right, we can crypt the password
     const cryptPassword = await hashPassword(cleanPassword)
 
-    await createUserDB(cleanName, cleanUsername, cleanMail, cryptPassword, role)
+    return createUserDB(cleanName, cleanUsername, cleanMail, cryptPassword, role); 
 }
 
 export const logInUser = async (username: string, password: string) => {
 
-    const result = await pool.query('SELECT id, username, password FROM users WHERE username = $1',
+    const result = await pool.query('SELECT id, username, password_hash FROM users WHERE username = $1',
         [username])
     
     const user = result.rows[0];
@@ -35,7 +35,7 @@ export const logInUser = async (username: string, password: string) => {
         userId: user.id,
         username: user.username
     }
-    const hashedPassword = user.password;
+    const hashedPassword = user.password_hash;
 
     // WE CALL ON THE LOGIN WITH THE NORMAL PASSWORD AND WE COMPARE WITH THE HASHED ONE
     const isValid = await bcrypt.compare(password, hashedPassword);
@@ -52,9 +52,9 @@ export const logInUser = async (username: string, password: string) => {
 
 export const refreshAccessToken = async (refreshToken: string) => {
 
-    const decoded = jwt.verify(refreshToken,  process.env.REFRESH_SECRET!) as { username: string };
+    const decoded = jwt.verify(refreshToken,  process.env.REFRESH_SECRET!) as { userId: string, username: string };
 
-    const newAccessToken = jwt.sign({ username: decoded.username }, process.env.TOKEN_SECRET!, { expiresIn: '10m' });
+    const newAccessToken = jwt.sign({ userId: decoded.userId, username: decoded.username }, process.env.TOKEN_SECRET!, { expiresIn: '10m' });
 
     return newAccessToken;
 

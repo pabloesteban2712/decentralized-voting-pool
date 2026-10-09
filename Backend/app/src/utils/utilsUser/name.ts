@@ -46,8 +46,7 @@ export async function checkUsername(username: string) {
         throw new Error("Username must contain a number.")
     }
 
-    // RECOMENDABLE DIVIDIR LA VALIDACION DE LA COMPROBACION DE BASE DE DATOS
-    const existsUsername = await findUsernameDB(username);
+     const existsUsername = await findUsernameDB(username);
 
     if (existsUsername) {
         throw new Error("User is already registered.")

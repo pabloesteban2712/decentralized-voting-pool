@@ -1,0 +1,4 @@
+[
+  "function getVotes(uint256 option) view returns (uint256)",
+  "function checkVote(uint256 option)"
+]
